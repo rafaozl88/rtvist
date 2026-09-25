@@ -102,13 +102,16 @@
 </head>
 <body>
 
-<!-- Form oculto para Netlify capturar os envios -->
-<form name="checkout-rtvist" class="netlify-form" data-netlify="true" netlify-honeypot="bot">
+<!-- Form Netlify - submissão real -->
+<form name="checkout-rtvist" netlify netlify-honeypot="bot-field"
+  id="netlify-form" method="POST" action="/checkout.html?enviado=1"
+  style="display:none">
   <input type="hidden" name="form-name" value="checkout-rtvist">
-  <input name="bot" style="display:none">
-  <input name="plano">
-  <input name="nome">
-  <input name="telefone">
+  <input name="bot-field" style="display:none">
+  <input name="plano"    id="nf-plano">
+  <input name="nome"     id="nf-nome">
+  <input name="telefone" id="nf-tel">
+  <button type="submit"  id="nf-submit">ok</button>
 </form>
 
 <header>
@@ -293,7 +296,7 @@ function ir(n) {
   window.scrollTo({ top:0, behavior:'smooth' });
 }
 
-async function pagar() {
+function pagar() {
   const nome = document.getElementById('f-nome').value.trim();
   const tel  = document.getElementById('f-tel').value.trim();
   const btn  = document.getElementById('btn-pagar');
@@ -301,23 +304,30 @@ async function pagar() {
   btn.textContent = '⏳ Registrando pedido...';
   btn.disabled = true;
 
-  // Enviar dados para Netlify Forms (chega no seu e-mail)
-  try {
-    await fetch('/', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      body: new URLSearchParams({
-        'form-name': 'checkout-rtvist',
-        plano: PLANOS[plano].nome,
-        nome,
-        telefone: tel,
-      }).toString(),
-    });
-  } catch(e) { /* silencioso — não bloquear o pagamento */ }
+  // Salvar link do MP para redirecionar após envio do form
+  localStorage.setItem('rtvist-mp-link', PLANOS[plano].link);
 
-  // Redirecionar para o link de pagamento do Mercado Pago
-  window.location.href = PLANOS[plano].link;
+  // Preencher e submeter form Netlify (submissão real — detectada garantido)
+  document.getElementById('nf-plano').value = PLANOS[plano].nome;
+  document.getElementById('nf-nome').value  = nome;
+  document.getElementById('nf-tel').value   = tel;
+  document.getElementById('netlify-form').submit();
 }
+
+// Após envio do Netlify Form, redirecionar para MP
+(function() {
+  if (window.location.search.includes('enviado=1')) {
+    const link = localStorage.getItem('rtvist-mp-link');
+    if (link) {
+      localStorage.removeItem('rtvist-mp-link');
+      window.location.href = link;
+    } else {
+      // Fallback: mostrar mensagem
+      document.querySelectorAll('.sec').forEach(s => s.classList.remove('on'));
+      document.getElementById('sec-ok').classList.add('on');
+    }
+  }
+})();
 
 // Formatar telefone
 document.getElementById('f-tel').addEventListener('input', function() {
