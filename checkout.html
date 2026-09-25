@@ -7,364 +7,113 @@
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🔍</text></svg>">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
-
-<!-- SDK Mercado Pago -->
-<script src="https://sdk.mercadopago.com/js/v2"></script>
-
 <style>
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
   :root {
-    --bg:       #0d0d0d;
-    --surface:  #161616;
-    --surface2: #1f1f1f;
-    --border:   #2a2a2a;
-    --border2:  #333;
-    --text:     #f0f0f0;
-    --text2:    #a0a0a0;
-    --text3:    #666;
-    --accent:   #caff00;
-    --danger:   #f87171;
-    --radius:   10px;
+    --bg: #0d0d0d; --surface: #161616; --surface2: #1f1f1f;
+    --border: #2a2a2a; --border2: #333;
+    --text: #f0f0f0; --text2: #a0a0a0; --text3: #666;
+    --accent: #caff00; --danger: #f87171; --radius: 10px;
   }
+  body { font-family:'Syne',sans-serif; background:var(--bg); color:var(--text); min-height:100vh; display:flex; flex-direction:column; }
 
-  body {
-    font-family: 'Syne', sans-serif;
-    background: var(--bg);
-    color: var(--text);
-    min-height: 100vh;
-    display: flex;
-    flex-direction: column;
-  }
+  header { background:var(--surface); border-bottom:1px solid var(--border); padding:0 2rem; height:60px; display:flex; align-items:center; justify-content:space-between; }
+  .logo { font-size:18px; font-weight:800; color:var(--accent); }
+  .logo span { color:var(--text2); font-weight:400; font-size:13px; margin-left:8px; }
+  .header-link { font-size:13px; color:var(--text2); text-decoration:none; border:1px solid var(--border2); padding:6px 14px; border-radius:6px; }
+  .header-link:hover { color:var(--text); }
 
-  /* ── HEADER ── */
-  header {
-    background: var(--surface);
-    border-bottom: 1px solid var(--border);
-    padding: 0 2rem;
-    height: 60px;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    position: sticky;
-    top: 0;
-    z-index: 100;
-  }
-  .logo {
-    font-size: 18px;
-    font-weight: 800;
-    letter-spacing: -.5px;
-    color: var(--accent);
-  }
-  .logo span { color: var(--text2); font-weight: 400; font-size: 13px; margin-left: 8px; }
-  .header-login {
-    font-size: 13px;
-    color: var(--text2);
-    text-decoration: none;
-    border: 1px solid var(--border2);
-    padding: 6px 14px;
-    border-radius: 6px;
-    transition: .15s;
-  }
-  .header-login:hover { color: var(--text); border-color: var(--text3); }
+  .hero { text-align:center; padding:2.5rem 1rem 1.5rem; border-bottom:1px solid var(--border); }
+  .hero h1 { font-size:clamp(22px,4vw,30px); font-weight:800; letter-spacing:-.5px; margin-bottom:8px; }
+  .hero h1 span { color:var(--accent); }
+  .hero p { font-size:14px; color:var(--text2); max-width:460px; margin:0 auto; line-height:1.6; }
 
-  /* ── HERO ── */
-  .hero {
-    text-align: center;
-    padding: 3rem 1rem 2rem;
-    border-bottom: 1px solid var(--border);
-  }
-  .hero h1 {
-    font-size: clamp(22px, 4vw, 32px);
-    font-weight: 800;
-    letter-spacing: -.5px;
-    margin-bottom: 8px;
-  }
-  .hero h1 span { color: var(--accent); }
-  .hero p { font-size: 14px; color: var(--text2); max-width: 480px; margin: 0 auto; line-height: 1.6; }
+  main { flex:1; max-width:820px; margin:0 auto; padding:2rem 1rem 4rem; width:100%; }
 
-  /* ── MAIN CONTENT ── */
-  main {
-    flex: 1;
-    max-width: 900px;
-    margin: 0 auto;
-    padding: 2rem 1rem 4rem;
-    width: 100%;
-  }
+  /* steps */
+  .steps { display:flex; gap:8px; margin-bottom:2rem; }
+  .step { flex:1; height:3px; background:var(--border); border-radius:2px; transition:.3s; }
+  .step.on { background:var(--accent); }
 
-  /* ── STEPS ── */
-  .steps {
-    display: flex;
-    gap: 8px;
-    margin-bottom: 2rem;
-    overflow: hidden;
-  }
-  .step {
-    flex: 1;
-    height: 3px;
-    background: var(--border);
-    border-radius: 2px;
-    transition: background .3s;
-  }
-  .step.active { background: var(--accent); }
+  /* seções */
+  .sec { display:none; }
+  .sec.on { display:block; }
+  .sec-label { font-size:11px; font-weight:700; letter-spacing:.1em; text-transform:uppercase; color:var(--text3); margin-bottom:1rem; }
 
-  /* ── SECTION ── */
-  .section { display: none; }
-  .section.active { display: block; }
-  .section-title {
-    font-size: 11px;
-    font-weight: 700;
-    letter-spacing: .1em;
-    text-transform: uppercase;
-    color: var(--text3);
-    margin-bottom: 1rem;
-  }
+  /* planos */
+  .planos { display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-bottom:1.5rem; }
+  @media(max-width:720px){ .planos { grid-template-columns:1fr !important; } }
+  .plano { background:var(--surface); border:2px solid var(--border); border-radius:var(--radius); padding:20px; cursor:pointer; transition:.2s; position:relative; user-select:none; }
+  .plano:hover { border-color:var(--border2); transform:translateY(-2px); }
+  .plano.sel { border-color:var(--accent); background:rgba(202,255,0,.04); }
+  .plano.sel::after { content:'✓'; position:absolute; top:14px; right:14px; background:var(--accent); color:#000; width:22px; height:22px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:800; }
+  .plano-tag { font-size:10px; font-weight:700; letter-spacing:.08em; text-transform:uppercase; color:var(--text3); margin-bottom:6px; }
+  .plano-nome { font-size:18px; font-weight:800; margin-bottom:4px; }
+  .plano-preco { font-size:28px; font-weight:800; color:var(--accent); line-height:1; }
+  .plano-preco small { font-size:13px; color:var(--text2); font-weight:400; }
+  .plano-desc { font-size:12px; color:var(--text2); margin-top:8px; line-height:1.5; }
+  .plano-badge { display:inline-block; background:#14532d; color:#86efac; font-size:10px; font-weight:700; padding:2px 8px; border-radius:10px; margin-top:8px; }
+  .plano-items { margin-top:10px; padding-top:10px; border-top:1px solid var(--border); list-style:none; font-size:12px; color:var(--text2); display:flex; flex-direction:column; gap:4px; }
+  .plano-items li::before { content:'✓ '; color:var(--accent); font-weight:700; }
 
-  /* ── PLANOS ── */
-  .planos-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 14px;
-    margin-bottom: 1.5rem;
-  }
-  @media (max-width: 560px) { .planos-grid { grid-template-columns: 1fr; } }
+  /* form */
+  .fgroup { margin-bottom:14px; }
+  .flabel { display:block; font-size:11px; font-weight:700; letter-spacing:.06em; text-transform:uppercase; color:var(--text3); margin-bottom:6px; }
+  .finput { width:100%; background:var(--surface2); border:1px solid var(--border2); border-radius:8px; color:var(--text); font-family:'Syne',sans-serif; font-size:15px; padding:12px 14px; outline:none; transition:.15s; }
+  .finput:focus { border-color:var(--accent); }
+  .finput::placeholder { color:var(--text3); }
 
-  .plano-card {
-    background: var(--surface);
-    border: 2px solid var(--border);
-    border-radius: var(--radius);
-    padding: 20px;
-    cursor: pointer;
-    transition: border-color .2s, transform .15s;
-    position: relative;
-    user-select: none;
-  }
-  .plano-card:hover { border-color: var(--border2); transform: translateY(-2px); }
-  .plano-card.sel {
-    border-color: var(--accent);
-    background: rgba(202,255,0,.04);
-  }
-  .plano-card.sel::after {
-    content: '✓';
-    position: absolute;
-    top: 14px; right: 14px;
-    background: var(--accent);
-    color: #000;
-    width: 22px; height: 22px;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 12px;
-    font-weight: 800;
-  }
-  .plano-tag {
-    font-size: 10px;
-    font-weight: 700;
-    letter-spacing: .08em;
-    text-transform: uppercase;
-    color: var(--text3);
-    margin-bottom: 6px;
-  }
-  .plano-nome {
-    font-size: 18px;
-    font-weight: 800;
-    margin-bottom: 4px;
-  }
-  .plano-preco {
-    font-size: 28px;
-    font-weight: 800;
-    color: var(--accent);
-    line-height: 1;
-  }
-  .plano-preco small {
-    font-size: 13px;
-    color: var(--text2);
-    font-weight: 400;
-  }
-  .plano-desc {
-    font-size: 12px;
-    color: var(--text2);
-    margin-top: 8px;
-    line-height: 1.5;
-  }
-  .plano-badge {
-    display: inline-block;
-    background: #14532d;
-    color: #86efac;
-    font-size: 10px;
-    font-weight: 700;
-    padding: 2px 8px;
-    border-radius: 10px;
-    margin-top: 8px;
-  }
-  .plano-features {
-    margin-top: 10px;
-    padding-top: 10px;
-    border-top: 1px solid var(--border);
-    list-style: none;
-    font-size: 12px;
-    color: var(--text2);
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-  }
-  .plano-features li::before { content: '✓ '; color: var(--accent); font-weight: 700; }
+  /* botões */
+  .btn { display:flex; align-items:center; justify-content:center; gap:8px; padding:14px 24px; border-radius:8px; font-family:'Syne',sans-serif; font-size:15px; font-weight:700; cursor:pointer; border:none; transition:.15s; width:100%; }
+  .btn-primary { background:var(--accent); color:#000; }
+  .btn-primary:hover { background:#d8ff1a; }
+  .btn-ghost { background:none; border:1px solid var(--border2); color:var(--text2); font-size:13px; padding:10px; margin-top:8px; }
+  .btn-ghost:hover { color:var(--text); border-color:var(--text3); }
 
-  /* ── FORM ── */
-  .form-group { margin-bottom: 14px; }
-  .form-label {
-    display: block;
-    font-size: 11px;
-    font-weight: 700;
-    letter-spacing: .06em;
-    text-transform: uppercase;
-    color: var(--text3);
-    margin-bottom: 6px;
-  }
-  .form-input {
-    width: 100%;
-    background: var(--surface2);
-    border: 1px solid var(--border2);
-    border-radius: 8px;
-    color: var(--text);
-    font-family: 'Syne', sans-serif;
-    font-size: 15px;
-    padding: 12px 14px;
-    outline: none;
-    transition: border-color .15s;
-  }
-  .form-input:focus { border-color: var(--accent); }
-  .form-input::placeholder { color: var(--text3); }
+  /* resumo */
+  .resumo { background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); padding:14px 18px; margin-bottom:1.5rem; display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap; }
+  .resumo-nome { font-size:14px; font-weight:700; }
+  .resumo-sub { font-size:12px; color:var(--text3); margin-top:2px; }
+  .resumo-valor { font-size:20px; font-weight:800; color:var(--accent); white-space:nowrap; }
+  .mudar { background:none; border:none; color:var(--accent); font-size:12px; cursor:pointer; text-decoration:underline; font-family:inherit; }
 
-  /* ── BOTÕES ── */
-  .btn {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 8px;
-    padding: 14px 24px;
-    border-radius: 8px;
-    font-family: 'Syne', sans-serif;
-    font-size: 15px;
-    font-weight: 700;
-    cursor: pointer;
-    border: none;
-    transition: .15s;
-    width: 100%;
-  }
-  .btn-primary {
-    background: var(--accent);
-    color: #000;
-  }
-  .btn-primary:hover { background: #d8ff1a; }
-  .btn-primary:disabled { opacity: .5; cursor: not-allowed; }
-  .btn-ghost {
-    background: none;
-    border: 1px solid var(--border2);
-    color: var(--text2);
-    font-size: 13px;
-    padding: 10px;
-    margin-top: 8px;
-  }
-  .btn-ghost:hover { color: var(--text); border-color: var(--text3); }
+  /* confirmação */
+  .confirm-box { background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); padding:18px 20px; margin-bottom:1.5rem; }
+  .confirm-row { display:flex; justify-content:space-between; font-size:13px; padding:6px 0; border-bottom:1px solid var(--border); }
+  .confirm-row:last-child { border:none; }
+  .confirm-label { color:var(--text3); }
+  .confirm-val { font-weight:700; }
 
-  /* ── RESUMO DO PEDIDO ── */
-  .resumo {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    padding: 16px;
-    margin-bottom: 1.5rem;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 12px;
-  }
-  .resumo-plano { font-size: 14px; font-weight: 700; }
-  .resumo-valor { font-size: 20px; font-weight: 800; color: var(--accent); white-space: nowrap; }
-  .resumo-change {
-    font-size: 12px;
-    color: var(--accent);
-    cursor: pointer;
-    text-decoration: underline;
-    background: none;
-    border: none;
-    font-family: inherit;
-  }
+  /* sucesso */
+  .sucesso { text-align:center; padding:3rem 1rem; }
+  .sucesso-icon { font-size:56px; margin-bottom:1rem; }
+  .sucesso-title { font-size:22px; font-weight:800; margin-bottom:8px; }
+  .sucesso-desc { font-size:14px; color:var(--text2); line-height:1.6; max-width:440px; margin:0 auto 1.5rem; }
 
-  /* ── CONTAINER MP BRICKS ── */
-  #payment-brick-container {
-    min-height: 200px;
-  }
-  #payment-loading {
-    text-align: center;
-    padding: 3rem 0;
-    color: var(--text3);
-    font-size: 13px;
-  }
-  .spinner {
-    width: 32px; height: 32px;
-    border: 3px solid var(--border2);
-    border-top-color: var(--accent);
-    border-radius: 50%;
-    animation: spin .7s linear infinite;
-    margin: 0 auto 12px;
-  }
-  @keyframes spin { to { transform: rotate(360deg); } }
+  /* segurança */
+  .seg { display:flex; align-items:center; justify-content:center; gap:6px; font-size:11px; color:var(--text3); margin-top:1rem; }
 
-  /* ── SUCCESS / ERROR ── */
-  .status-screen {
-    text-align: center;
-    padding: 3rem 1rem;
-  }
-  .status-icon { font-size: 56px; margin-bottom: 1rem; }
-  .status-title { font-size: 22px; font-weight: 800; margin-bottom: 8px; }
-  .status-desc { font-size: 14px; color: var(--text2); line-height: 1.6; max-width: 440px; margin: 0 auto 1.5rem; }
-  .status-box {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    padding: 16px 20px;
-    text-align: left;
-    max-width: 400px;
-    margin: 0 auto 1.5rem;
-    font-size: 13px;
-    color: var(--text2);
-    line-height: 1.8;
-  }
+  footer { border-top:1px solid var(--border); padding:1.5rem; text-align:center; font-size:11px; color:var(--text3); line-height:1.7; }
+  footer a { color:var(--text3); }
 
-  /* ── FOOTER ── */
-  footer {
-    border-top: 1px solid var(--border);
-    padding: 1.5rem;
-    text-align: center;
-    font-size: 11px;
-    color: var(--text3);
-    line-height: 1.7;
-  }
-  footer a { color: var(--text3); }
-
-  /* ── SEGURANÇA ── */
-  .seguranca {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 6px;
-    font-size: 11px;
-    color: var(--text3);
-    margin-top: 1rem;
-  }
-
-  /* ── MP BRICKS OVERRIDE ── */
-  #payment-brick-container iframe { border-radius: 8px !important; }
+  /* form oculto Netlify */
+  .netlify-form { display:none; }
 </style>
 </head>
 <body>
 
+<!-- Form oculto para Netlify capturar os envios -->
+<form name="checkout-rtvist" class="netlify-form" data-netlify="true" netlify-honeypot="bot">
+  <input type="hidden" name="form-name" value="checkout-rtvist">
+  <input name="bot" style="display:none">
+  <input name="plano">
+  <input name="nome">
+  <input name="telefone">
+</form>
+
 <header>
   <div class="logo">RT Vist <span>Banco de Comparação</span></div>
-  <a href="https://bancortvist.netlify.app" class="header-login">Já tenho acesso →</a>
+  <a href="https://bancortvist.netlify.app" class="header-link">Já tenho acesso →</a>
 </header>
 
 <div class="hero">
@@ -374,135 +123,115 @@
 
 <main>
 
-  <!-- STEPS INDICADOR -->
   <div class="steps">
-    <div class="step active" id="step-1"></div>
-    <div class="step" id="step-2"></div>
-    <div class="step" id="step-3"></div>
+    <div class="step on" id="s1"></div>
+    <div class="step" id="s2"></div>
+    <div class="step" id="s3"></div>
   </div>
 
-  <!-- SEÇÃO 1: PLANOS -->
-  <div class="section active" id="sec-planos">
-    <div class="section-title">1 — Escolha seu plano</div>
-
-    <div class="planos-grid">
-
-      <div class="plano-card sel" id="card-mensal" onclick="selecionarPlano('mensal', this)">
-        <div class="plano-tag">Flexível</div>
-        <div class="plano-nome">Mensal</div>
-        <div class="plano-preco">R$ 21,90 <small>/mês</small></div>
-        <div class="plano-desc">Cobrado uma vez por mês. Cancele quando quiser.</div>
-        <ul class="plano-features">
+  <!-- PASSO 1: PLANOS -->
+  <div class="sec on" id="sec1">
+    <div class="sec-label">1 — Escolha seu plano</div>
+    <div class="planos" style="grid-template-columns:repeat(3,1fr);">
+      <div class="plano sel" id="pl-avulso" onclick="selPlano('avulso',this)">
+        <div class="plano-tag">Sem compromisso</div>
+        <div class="plano-nome">1 Mês Avulso</div>
+        <div class="plano-preco">R$ 24,90 <small>/mês</small></div>
+        <div class="plano-desc">Pagamento único. Válido por 30 dias.</div>
+        <ul class="plano-items">
           <li>Acesso completo ao banco</li>
           <li>Busca por motor e chassi</li>
-          <li>Aba de adulterações</li>
-          <li>Acesso em 1 dispositivo</li>
+          <li>Adulterações catalogadas</li>
+          <li>1 dispositivo por conta</li>
         </ul>
       </div>
-
-      <div class="plano-card" id="card-anual" onclick="selecionarPlano('anual', this)">
+      <div class="plano" id="pl-mensal" onclick="selPlano('mensal',this)">
+        <div class="plano-tag">Recorrente</div>
+        <div class="plano-nome">Mensal</div>
+        <div class="plano-preco">R$ 21,90 <small>/mês</small></div>
+        <div class="plano-desc">Cobrado automaticamente todo mês no cartão.</div>
+        <ul class="plano-items">
+          <li>Acesso completo ao banco</li>
+          <li>Busca por motor e chassi</li>
+          <li>Adulterações catalogadas</li>
+          <li>1 dispositivo por conta</li>
+        </ul>
+      </div>
+      <div class="plano" id="pl-anual" onclick="selPlano('anual',this)">
         <div class="plano-tag">Melhor valor</div>
         <div class="plano-nome">Anual</div>
         <div class="plano-preco">R$ 209,90 <small>/ano</small></div>
-        <div class="plano-desc">Pagamento único. Equivale a R$ 17,49 por mês.</div>
+        <div class="plano-desc">Pagamento único. R$ 17,49/mês.</div>
         <span class="plano-badge">Economize 20%</span>
-        <ul class="plano-features">
+        <ul class="plano-items">
           <li>Acesso completo ao banco</li>
           <li>Busca por motor e chassi</li>
-          <li>Aba de adulterações</li>
-          <li>Acesso em 1 dispositivo</li>
+          <li>Adulterações catalogadas</li>
+          <li>1 dispositivo por conta</li>
         </ul>
       </div>
-
     </div>
-
-    <button class="btn btn-primary" onclick="irParaDados()">Continuar →</button>
+    <button class="btn btn-primary" onclick="ir(2)">Continuar →</button>
   </div>
 
-  <!-- SEÇÃO 2: DADOS -->
-  <div class="section" id="sec-dados">
-    <div class="section-title">2 — Seus dados</div>
-
-    <div class="resumo" id="resumo-dados">
-      <div>
-        <div class="resumo-plano" id="resumo-plano-nome">—</div>
-        <div style="font-size:12px;color:var(--text3)" id="resumo-plano-desc">—</div>
-      </div>
-      <div class="resumo-valor" id="resumo-plano-valor">—</div>
-      <button class="resumo-change" onclick="voltarPlanos()">Trocar</button>
-    </div>
-
-    <div class="form-group">
-      <label class="form-label">Seu nome *</label>
-      <input class="form-input" id="nome-input" type="text" placeholder="Como podemos te chamar?">
-    </div>
-    <div class="form-group">
-      <label class="form-label">WhatsApp *</label>
-      <input class="form-input" id="tel-input" type="tel" placeholder="(74) 99999-9999">
-      <div style="font-size:11px;color:var(--text3);margin-top:4px;">Enviaremos seu acesso por aqui após confirmação.</div>
-    </div>
-
-    <div id="dados-err" style="color:var(--danger);font-size:13px;margin-bottom:10px;display:none;"></div>
-
-    <button class="btn btn-primary" onclick="irParaPagamento()" id="btn-ir-pag">Ir para pagamento →</button>
-    <button class="btn btn-ghost" onclick="voltarPlanos()">← Voltar</button>
-  </div>
-
-  <!-- SEÇÃO 3: PAGAMENTO -->
-  <div class="section" id="sec-pagamento">
-    <div class="section-title">3 — Pagamento</div>
+  <!-- PASSO 2: DADOS -->
+  <div class="sec" id="sec2">
+    <div class="sec-label">2 — Seus dados</div>
 
     <div class="resumo">
       <div>
-        <div class="resumo-plano" id="resumo-pag-nome">—</div>
-        <div style="font-size:12px;color:var(--text3)" id="resumo-pag-cliente">—</div>
+        <div class="resumo-nome" id="r-plano">—</div>
+        <div class="resumo-sub" id="r-desc">—</div>
       </div>
-      <div class="resumo-valor" id="resumo-pag-valor">—</div>
-      <button class="resumo-change" onclick="voltarDados()">Editar</button>
+      <div class="resumo-valor" id="r-valor">—</div>
+      <button class="mudar" onclick="ir(1)">Trocar</button>
     </div>
 
-    <!-- Botão PIX rápido (fallback se Bricks não carregar) -->
-    <div id="payment-loading">
-      <div class="spinner"></div>
-      Carregando formas de pagamento...
+    <div class="fgroup">
+      <label class="flabel">Seu nome *</label>
+      <input class="finput" id="f-nome" type="text" placeholder="Como podemos te chamar?">
     </div>
-
-    <div id="payment-brick-container"></div>
-
-    <div class="seguranca">
-      🔒 Pagamento processado pelo Mercado Pago &mdash; seus dados estão seguros
+    <div class="fgroup">
+      <label class="flabel">WhatsApp *</label>
+      <input class="finput" id="f-tel" type="tel" placeholder="(74) 99999-9999">
+      <div style="font-size:11px;color:var(--text3);margin-top:4px;">Enviaremos seu acesso por aqui após a confirmação.</div>
     </div>
+    <div id="f-err" style="color:var(--danger);font-size:13px;margin-bottom:10px;display:none;"></div>
+    <button class="btn btn-primary" onclick="ir(3)">Revisar pedido →</button>
+    <button class="btn btn-ghost" onclick="ir(1)">← Voltar</button>
   </div>
 
-  <!-- SEÇÃO: SUCESSO -->
-  <div class="section" id="sec-sucesso">
-    <div class="status-screen">
-      <div class="status-icon">✅</div>
-      <div class="status-title">Pagamento confirmado!</div>
-      <div class="status-desc">Recebemos seu pagamento. Em breve você receberá seus dados de acesso pelo WhatsApp.</div>
-      <div class="status-box">
-        <div>📋 <strong>Plano:</strong> <span id="ok-plano">—</span></div>
-        <div>👤 <strong>Nome:</strong> <span id="ok-nome">—</span></div>
-        <div>📱 <strong>WhatsApp:</strong> <span id="ok-tel">—</span></div>
-        <div style="margin-top:8px;padding-top:8px;border-top:1px solid var(--border);font-size:11px;color:var(--text3);">
-          Prazo de ativação: até 24 horas úteis
-        </div>
-      </div>
-      <a href="https://bancortvist.netlify.app" class="btn btn-primary" style="text-decoration:none;max-width:300px;margin:0 auto;">
-        Ir para o RT Vist →
-      </a>
+  <!-- PASSO 3: CONFIRMAR E PAGAR -->
+  <div class="sec" id="sec3">
+    <div class="sec-label">3 — Confirmar e pagar</div>
+
+    <div class="confirm-box">
+      <div class="confirm-row"><span class="confirm-label">Plano</span><span class="confirm-val" id="c-plano">—</span></div>
+      <div class="confirm-row"><span class="confirm-label">Nome</span><span class="confirm-val" id="c-nome">—</span></div>
+      <div class="confirm-row"><span class="confirm-label">WhatsApp</span><span class="confirm-val" id="c-tel">—</span></div>
+      <div class="confirm-row"><span class="confirm-label">Valor</span><span class="confirm-val" style="color:var(--accent)" id="c-valor">—</span></div>
     </div>
+
+    <p style="font-size:13px;color:var(--text2);margin-bottom:1.2rem;line-height:1.6;">
+      Ao clicar em <strong style="color:var(--text)">Ir para pagamento</strong>, você será direcionado para a página segura do <strong style="color:var(--text)">Mercado Pago</strong> onde poderá pagar com <strong style="color:var(--text)">PIX, cartão ou boleto</strong>.
+    </p>
+
+    <button class="btn btn-primary" id="btn-pagar" onclick="pagar()">
+      💳 Ir para pagamento seguro →
+    </button>
+    <button class="btn btn-ghost" onclick="ir(2)">← Voltar e editar</button>
+
+    <div class="seg">🔒 Pagamento processado pelo Mercado Pago — seus dados estão seguros</div>
   </div>
 
-  <!-- SEÇÃO: PENDENTE -->
-  <div class="section" id="sec-pendente">
-    <div class="status-screen">
-      <div class="status-icon">⏳</div>
-      <div class="status-title">Pagamento em análise</div>
-      <div class="status-desc">Seu pagamento foi recebido e está sendo processado. Você será notificado assim que for aprovado.</div>
-      <div class="status-box">
-        Se pagou via boleto, pode levar até 3 dias úteis para compensar.<br>
-        Se pagou via PIX, normalmente é aprovado em segundos.
+  <!-- SUCESSO -->
+  <div class="sec" id="sec-ok">
+    <div class="sucesso">
+      <div class="sucesso-icon">✅</div>
+      <div class="sucesso-title">Pedido registrado!</div>
+      <div class="sucesso-desc">
+        Você será redirecionado para o Mercado Pago para finalizar o pagamento.<br><br>
+        Após a confirmação, enviaremos seu acesso pelo WhatsApp em até <strong>24 horas úteis</strong>.
       </div>
       <a href="https://bancortvist.netlify.app" class="btn btn-ghost" style="text-decoration:none;max-width:300px;margin:0 auto;">
         Voltar ao RT Vist
@@ -510,277 +239,95 @@
     </div>
   </div>
 
-  <!-- SEÇÃO: ERRO -->
-  <div class="section" id="sec-erro">
-    <div class="status-screen">
-      <div class="status-icon">❌</div>
-      <div class="status-title">Pagamento não processado</div>
-      <div class="status-desc">Houve um problema com seu pagamento. Nenhum valor foi cobrado.</div>
-      <button class="btn btn-primary" onclick="reiniciar()" style="max-width:300px;margin:0 auto;">
-        Tentar novamente
-      </button>
-    </div>
-  </div>
-
 </main>
 
 <footer>
   Pagamentos processados com segurança pelo <strong>Mercado Pago</strong><br>
-  RT Vist &mdash; Banco de Comparação Veicular &mdash; <a href="https://bancortvist.netlify.app">bancortvist.netlify.app</a>
+  RT Vist — Banco de Comparação Veicular — <a href="https://bancortvist.netlify.app">bancortvist.netlify.app</a>
 </footer>
 
 <script>
-// ─── ESTADO ──────────────────────────────────────────────────────────────────
 const PLANOS = {
-  mensal: { nome: 'Plano Mensal',   valor: 'R$ 21,90',  desc: 'Cobrado mensalmente', raw: 21.90  },
-  anual:  { nome: 'Plano Anual',    valor: 'R$ 209,90', desc: 'Pagamento único anual', raw: 209.90 },
+  avulso: { nome:'1 Mês Avulso',  desc:'Pagamento único — 30 dias', valor:'R$ 24,90',  link:'https://mpago.la/1GpKRPu' },
+  mensal: { nome:'Plano Mensal',  desc:'Cobrado mensalmente no cartão', valor:'R$ 21,90',  link:'https://mpago.la/1WEmyzX' },
+  anual:  { nome:'Plano Anual',   desc:'Pagamento único anual', valor:'R$ 209,90', link:'https://mpago.la/1kXCwix' },
 };
 
-// SUBSTITUA PELA SUA PUBLIC KEY DO MERCADO PAGO
-const MP_PUBLIC_KEY = APP_USR-9396c64a-8032-4e27-aee8-4f118ba7173c;
+let plano = 'avulso';
 
-let planoSel = 'mensal';
-let mpInstance = null;
-let brickController = null;
-
-// ─── NAVEGAÇÃO ────────────────────────────────────────────────────────────────
-function mostrarSecao(id) {
-  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
-  document.getElementById(id).classList.add('active');
-
-  // Atualizar steps
-  const stepMap = { 'sec-planos': 1, 'sec-dados': 2, 'sec-pagamento': 3 };
-  const step = stepMap[id] || 0;
-  [1,2,3].forEach(i => {
-    document.getElementById('step-'+i).classList.toggle('active', i <= step);
-  });
-  window.scrollTo({ top: 0, behavior: 'smooth' });
-}
-
-// ─── SELEÇÃO DE PLANO ────────────────────────────────────────────────────────
-function selecionarPlano(plano, el) {
-  planoSel = plano;
-  document.querySelectorAll('.plano-card').forEach(c => c.classList.remove('sel'));
+function selPlano(p, el) {
+  plano = p;
+  document.querySelectorAll('.plano').forEach(c => c.classList.remove('sel'));
   el.classList.add('sel');
 }
 
-function voltarPlanos() { mostrarSecao('sec-planos'); }
-
-function irParaDados() {
-  // Atualizar resumo
-  const p = PLANOS[planoSel];
-  document.getElementById('resumo-plano-nome').textContent = p.nome;
-  document.getElementById('resumo-plano-desc').textContent = p.desc;
-  document.getElementById('resumo-plano-valor').textContent = p.valor;
-  mostrarSecao('sec-dados');
-  document.getElementById('nome-input').focus();
+function steps(n) {
+  [1,2,3].forEach(i => document.getElementById('s'+i).classList.toggle('on', i <= n));
 }
 
-// ─── DADOS DO CLIENTE ────────────────────────────────────────────────────────
-function voltarDados() { mostrarSecao('sec-dados'); }
-
-async function irParaPagamento() {
-  const nome = document.getElementById('nome-input').value.trim();
-  const tel  = document.getElementById('tel-input').value.trim();
-  const err  = document.getElementById('dados-err');
-
-  if (!nome) { err.textContent = 'Informe seu nome.'; err.style.display = ''; return; }
-  if (tel.replace(/\D/g,'').length < 10) { err.textContent = 'Informe um WhatsApp válido.'; err.style.display = ''; return; }
-  err.style.display = 'none';
-
-  const p = PLANOS[planoSel];
-  document.getElementById('resumo-pag-nome').textContent    = p.nome;
-  document.getElementById('resumo-pag-cliente').textContent = nome + ' · ' + tel;
-  document.getElementById('resumo-pag-valor').textContent   = p.valor;
-
-  mostrarSecao('sec-pagamento');
-  await iniciarPagamento(nome, tel);
+function ir(n) {
+  // Validar dados antes de avançar
+  if (n === 3) {
+    const nome = document.getElementById('f-nome').value.trim();
+    const tel  = document.getElementById('f-tel').value.trim();
+    const err  = document.getElementById('f-err');
+    if (!nome) { err.textContent='Informe seu nome.'; err.style.display=''; return; }
+    if (tel.replace(/\D/g,'').length < 10) { err.textContent='Informe um WhatsApp válido com DDD.'; err.style.display=''; return; }
+    err.style.display = 'none';
+    // Preencher resumo
+    const p = PLANOS[plano];
+    document.getElementById('c-plano').textContent = p.nome;
+    document.getElementById('c-nome').textContent  = nome;
+    document.getElementById('c-tel').textContent   = tel;
+    document.getElementById('c-valor').textContent = p.valor;
+  }
+  if (n === 2) {
+    const p = PLANOS[plano];
+    document.getElementById('r-plano').textContent = p.nome;
+    document.getElementById('r-desc').textContent  = p.desc;
+    document.getElementById('r-valor').textContent = p.valor;
+  }
+  document.querySelectorAll('.sec').forEach(s => s.classList.remove('on'));
+  document.getElementById('sec'+(n===4?'-ok':n)).classList.add('on');
+  steps(n > 3 ? 3 : n);
+  window.scrollTo({ top:0, behavior:'smooth' });
 }
 
-// ─── PAGAMENTO ────────────────────────────────────────────────────────────────
-async function iniciarPagamento(nome, tel) {
-  const loading = document.getElementById('payment-loading');
-  const container = document.getElementById('payment-brick-container');
-  loading.style.display = 'block';
-  container.innerHTML = '';
+async function pagar() {
+  const nome = document.getElementById('f-nome').value.trim();
+  const tel  = document.getElementById('f-tel').value.trim();
+  const btn  = document.getElementById('btn-pagar');
 
+  btn.textContent = '⏳ Registrando pedido...';
+  btn.disabled = true;
+
+  // Enviar dados para Netlify Forms (chega no seu e-mail)
   try {
-    // 1. Criar preferência no backend
-    const resp = await fetch('/.netlify/functions/criar-preferencia', {
+    await fetch('/', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ plano: planoSel, nome, telefone: tel }),
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: new URLSearchParams({
+        'form-name': 'checkout-rtvist',
+        plano: PLANOS[plano].nome,
+        nome,
+        telefone: tel,
+      }).toString(),
     });
+  } catch(e) { /* silencioso — não bloquear o pagamento */ }
 
-    if (!resp.ok) throw new Error('Erro ao criar preferência');
-    const { preferenceId, initPoint } = await resp.json();
-
-    // 2. Inicializar Mercado Pago Bricks
-    loading.style.display = 'none';
-
-    if (typeof MercadoPago === 'undefined') {
-      // Fallback: botão de redirect para MP
-      container.innerHTML = `
-        <div style="text-align:center;padding:2rem 0;">
-          <p style="color:var(--text2);font-size:13px;margin-bottom:1rem;">
-            Clique abaixo para ir à página de pagamento segura do Mercado Pago:
-          </p>
-          <a href="${initPoint}" target="_blank" class="btn btn-primary" style="text-decoration:none;max-width:340px;margin:0 auto;">
-            💳 Pagar com segurança →
-          </a>
-        </div>`;
-      return;
-    }
-
-    if (!mpInstance) {
-      mpInstance = new MercadoPago(MP_PUBLIC_KEY, { locale: 'pt-BR' });
-    }
-
-    if (brickController) {
-      await brickController.unmount();
-      brickController = null;
-    }
-
-    const bricks = mpInstance.bricks();
-    brickController = await bricks.create('payment', 'payment-brick-container', {
-      initialization: {
-        amount: PLANOS[planoSel].raw,
-        preferenceId,
-      },
-      customization: {
-        paymentMethods: {
-          ticket:     'all',  // boleto
-          creditCard: 'all',
-          debitCard:  'all',
-          bankTransfer: 'all', // PIX
-        },
-        visual: {
-          style: {
-            theme: 'dark',
-            customVariables: {
-              baseColor:       '#caff00',
-              baseColorFirstVariant: '#d8ff1a',
-              baseColorSecondVariant: '#b5e600',
-              fontSizeBase:    '15px',
-              fontFamily:      "'Syne', sans-serif",
-              borderRadiusSmall: '6px',
-              borderRadiusMedium: '8px',
-              borderRadiusLarge: '10px',
-            },
-          },
-        },
-      },
-      callbacks: {
-        onReady: () => { loading.style.display = 'none'; },
-        onSubmit: async ({ formData }) => {
-          // Processar pagamento
-          try {
-            const r = await fetch('/.netlify/functions/processar-pagamento', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ ...formData, plano: planoSel, nome, telefone: tel }),
-            });
-            const result = await r.json();
-            if (result.status === 'approved') {
-              mostrarSucesso(planoSel, nome, tel);
-            } else if (result.status === 'pending' || result.status === 'in_process') {
-              mostrarPendente();
-            } else {
-              mostrarSecao('sec-erro');
-            }
-          } catch(e) {
-            mostrarSecao('sec-erro');
-          }
-        },
-        onError: (err) => {
-          console.error('MP Brick error:', err);
-          // Fallback para redirect
-          container.innerHTML = `
-            <div style="text-align:center;padding:1.5rem 0;">
-              <p style="color:var(--text2);font-size:13px;margin-bottom:1rem;">
-                Pague com segurança pelo Mercado Pago:
-              </p>
-              <a href="${initPoint}" target="_blank" class="btn btn-primary" style="text-decoration:none;max-width:340px;margin:0 auto;">
-                💳 Pagar agora →
-              </a>
-            </div>`;
-        },
-      },
-    });
-
-  } catch(e) {
-    console.error(e);
-    loading.innerHTML = `
-      <div style="color:var(--danger);font-size:13px;text-align:center;padding:1rem;">
-        Não foi possível carregar o pagamento. <br>
-        <button onclick="location.reload()" style="margin-top:8px;background:none;border:1px solid var(--border2);color:var(--text2);padding:6px 14px;border-radius:6px;cursor:pointer;font-family:inherit;">
-          Tentar novamente
-        </button>
-      </div>`;
-  }
+  // Redirecionar para o link de pagamento do Mercado Pago
+  window.location.href = PLANOS[plano].link;
 }
 
-// ─── ESTADOS FINAIS ────────────────────────────────────────────────────────
-function mostrarSucesso(plano, nome, tel) {
-  document.getElementById('ok-plano').textContent = PLANOS[plano]?.nome || plano;
-  document.getElementById('ok-nome').textContent  = nome;
-  document.getElementById('ok-tel').textContent   = tel;
-  mostrarSecao('sec-sucesso');
-}
-
-function mostrarPendente() { mostrarSecao('sec-pendente'); }
-
-function reiniciar() {
-  planoSel = 'mensal';
-  document.getElementById('nome-input').value = '';
-  document.getElementById('tel-input').value  = '';
-  document.querySelectorAll('.plano-card').forEach(c => c.classList.remove('sel'));
-  document.getElementById('card-mensal').classList.add('sel');
-  mostrarSecao('sec-planos');
-}
-
-// ─── VERIFICAR STATUS NA URL (retorno do MP) ─────────────────────────────────
-(function verificarStatus() {
-  const params = new URLSearchParams(window.location.search);
-  const status = params.get('status');
-  const nome   = params.get('nome') || '';
-  const plano  = params.get('plano') || 'mensal';
-
-  if (status === 'aprovado') {
-    const tel = localStorage.getItem('rtvist_checkout_tel') || '';
-    mostrarSucesso(plano, decodeURIComponent(nome), tel);
-  } else if (status === 'pendente') {
-    mostrarPendente();
-  } else if (status === 'erro') {
-    mostrarSecao('sec-erro');
+// Formatar telefone
+document.getElementById('f-tel').addEventListener('input', function() {
+  let v = this.value.replace(/\D/g,'');
+  if (v.length <= 11) {
+    v = v.replace(/^(\d{2})(\d)/,'($1) $2');
+    v = v.replace(/(\d{5})(\d)/,'$1-$2');
   }
-})();
-
-// Salvar tel no localStorage ao avançar (para mostrar na tela de sucesso após redirect)
-document.addEventListener('DOMContentLoaded', () => {
-  const telInput = document.getElementById('tel-input');
-  if (telInput) {
-    telInput.addEventListener('change', () => {
-      localStorage.setItem('rtvist_checkout_tel', telInput.value);
-    });
-  }
-});
-
-// Formatar telefone ao digitar
-document.addEventListener('DOMContentLoaded', () => {
-  const tel = document.getElementById('tel-input');
-  if (tel) {
-    tel.addEventListener('input', () => {
-      let v = tel.value.replace(/\D/g,'');
-      if (v.length <= 11) {
-        v = v.replace(/^(\d{2})(\d)/,'($1) $2');
-        v = v.replace(/(\d{5})(\d)/,'$1-$2');
-      }
-      tel.value = v;
-    });
-  }
+  this.value = v;
 });
 </script>
-
 </body>
 </html>
