@@ -6,6 +6,8 @@ const button = {style:{}};
 let removed = 0;
 const context = {
   usuarioAtual:null, ADMIN_USER:'rtmaster', showToast:()=>{},
+  MASTER_UID:'dH5E2b6Km5dh3U1gZG1e0XDHLMw1',
+  auth:{currentUser:{uid:'dH5E2b6Km5dh3U1gZG1e0XDHLMw1'}},
   document:{getElementById:id=>id==='btn-editar-veiculo'?button:{remove:()=>removed++}}
 };
 vm.createContext(context);
@@ -23,6 +25,15 @@ for (const [user, allowed] of [
   assert.equal(context.exigirMasterVeiculos(),allowed);
 }
 assert.equal(removed,4);
+context.usuarioAtual={usuario:'rtmaster',nivel:'admin'};
+context.auth.currentUser=null;
+assert.equal(context.podeEditarVeiculos(),false);
+context.atualizarPermissaoEdicao();
+assert.equal(button.style.display,'none');
+context.auth.currentUser={uid:'outro-uid'};
+assert.equal(context.podeEditarVeiculos(),false);
+context.atualizarPermissaoEdicao();
+assert.equal(button.style.display,'none');
 context.usuarioAtual={usuario:'assinante',nivel:'usuario'};
 const save=source.slice(source.indexOf('async function fbSalvarVeiculo('),source.indexOf('// USUÁRIOS'));
 vm.runInContext(save,context);
