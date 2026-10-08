@@ -6,8 +6,8 @@ const button = {style:{}};
 let removed = 0;
 const context = {
   usuarioAtual:null, ADMIN_USER:'rtmaster', showToast:()=>{},
-  MASTER_UID:'dH5E2b6Km5dh3U1gZG1e0XDHLMw1',
-  auth:{currentUser:{uid:'dH5E2b6Km5dh3U1gZG1e0XDHLMw1'}},
+  MASTER_UID:'N4PXpla04LX9Lpip4NsSk8ESYGL2',
+  auth:{currentUser:{uid:'N4PXpla04LX9Lpip4NsSk8ESYGL2'}},
   document:{getElementById:id=>id==='btn-editar-veiculo'?button:{remove:()=>removed++}}
 };
 vm.createContext(context);
