@@ -2595,7 +2595,14 @@ async function fazerLogin(){
     await auth.signInWithEmailAndPassword(email, pass);
   } catch(e) {
     // Fallback Firestore (admin e usuários legados)
-    if (usuarios.length === 0) await fbCarregarUsuarios();
+    if (usuarios.length === 0) {
+      try { await fbCarregarUsuarios(); }
+      catch (err) {
+        console.error('Erro ao consultar acesso:', err);
+        msg.textContent = 'Não foi possível consultar seu acesso. Verifique as regras do Firestore e tente novamente.';
+        return;
+      }
+    }
     const found = usuarios.find(u => u.usuario === user && u.senha === pass);
     if (found && (found.nivel === 'admin' || new Date(found.fim) >= new Date())) {
       localStorage.setItem('rtvist_session', found.usuario);
@@ -2904,6 +2911,9 @@ window.confirmarRenovacao = confirmarRenovacao;
 
 // ─── INIT ─────────────────────────────────────────────────────────────────────
 (async()=>{
+  // O formulário de login não depende das leituras do Firestore.
+  document.getElementById('loading-screen').style.display = 'none';
+  document.getElementById('login-screen').style.display = 'flex';
   // Mostrar loading
   document.getElementById('results-container').innerHTML='<div class="empty-state"><h3 style="color:var(--accent)">⟳ Conectando ao Firebase…</h3><p>Aguarde um instante.</p></div>';
 
@@ -2929,6 +2939,7 @@ window.confirmarRenovacao = confirmarRenovacao;
   };
 
   auth.onAuthStateChanged(async (firebaseUser) => {
+    try {
     // Garantir usuarios carregados antes de qualquer verificação
     if (usuarios.length === 0) await fbCarregarUsuarios();
 
@@ -2960,6 +2971,15 @@ window.confirmarRenovacao = confirmarRenovacao;
       }
       esconderLoading();
       document.getElementById('login-screen').style.display = 'flex';
+    }
+    } catch (err) {
+      console.error('Erro ao carregar sessão:', err);
+      usuarioAtual = null;
+      atualizarPermissaoEdicao();
+      document.getElementById('login-screen').style.display = 'flex';
+      document.getElementById('login-msg').textContent = 'Não foi possível carregar seu acesso. Verifique as regras do Firestore e tente novamente.';
+    } finally {
+      esconderLoading();
     }
   });
 })();
