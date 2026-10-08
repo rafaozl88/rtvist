@@ -1762,14 +1762,18 @@ let modoVisu        = localStorage.getItem('rt_visu') || 'grid';
 
 const POR_PAGINA  = 12;
 const ADMIN_USER  = 'rtmaster';
+const MASTER_UID = 'dH5E2b6Km5dh3U1gZG1e0XDHLMw1';
 const ADMIN_PASS  = 'rtmastervist2026';
 
 function podeEditarVeiculos() {
-  return usuarioAtual?.usuario === ADMIN_USER && usuarioAtual?.nivel === 'admin';
+  return usuarioAtual?.usuario === ADMIN_USER && usuarioAtual?.nivel === 'admin'
+    && auth.currentUser?.uid === MASTER_UID;
 }
 function exigirMasterVeiculos() {
   if (podeEditarVeiculos()) return true;
-  showToast('Somente o Master pode alterar os cadastros de veículos.', 'error');
+  showToast(usuarioAtual?.usuario === ADMIN_USER
+    ? 'A sessão do Master não está autenticada no Firebase. Saia e entre novamente com a conta Master.'
+    : 'Somente o Master pode alterar os cadastros de veículos.', 'error');
   return false;
 }
 function atualizarPermissaoEdicao() {
@@ -2154,7 +2158,11 @@ async function salvarEdicao() {
     document.getElementById('edit-overlay').remove();
     showToast(`✔ "${v.nome}" atualizado com sucesso!`, 'success');
   } catch(err) {
-    showToast('Erro ao salvar. Tente novamente.', 'error');
+    console.error('Erro ao salvar veículo:', err);
+    const mensagem = err.code === 'permission-denied'
+      ? 'O Firebase negou a gravação. Confira o UID do Master nas regras do Firestore.'
+      : 'Erro ao salvar. Confira sua conexão e tente novamente.';
+    showToast(mensagem, 'error');
     btn.textContent = '✔ Salvar Alterações'; btn.disabled = false;
   }
 }
@@ -2594,6 +2602,11 @@ async function fazerLogin(){
     const email = user + '@rtvist.app';
     await auth.signInWithEmailAndPassword(email, pass);
   } catch(e) {
+    if (user === ADMIN_USER) {
+      console.error('Erro de autenticação do Master:', e.code);
+      msg.textContent = 'O Master precisa entrar pelo Firebase. Verifique a senha da conta rtmaster@rtvist.app em Authentication. A sessão local não permite salvar veículos.';
+      return;
+    }
     // Fallback Firestore (admin e usuários legados)
     if (usuarios.length === 0) {
       try { await fbCarregarUsuarios(); }
@@ -2616,6 +2629,14 @@ async function fazerLogin(){
 window.fazerLogin = fazerLogin;
 
 function aplicarLogin(encontrado){
+  if (encontrado.usuario === ADMIN_USER && auth.currentUser?.uid !== MASTER_UID) {
+    usuarioAtual = null;
+    atualizarPermissaoEdicao();
+    localStorage.removeItem('rtvist_session');
+    document.getElementById('login-screen').style.display = 'flex';
+    document.getElementById('login-msg').textContent = 'Entre com a conta Master autenticada no Firebase. O UID deve corresponder ao configurado nas regras.';
+    return;
+  }
   usuarioAtual=encontrado;
   atualizarPermissaoEdicao();
   document.getElementById('login-screen').style.display='none';
@@ -2961,7 +2982,7 @@ window.confirmarRenovacao = confirmarRenovacao;
       const sessaoSalva = localStorage.getItem('rtvist_session');
       if (sessaoSalva) {
         const u = usuarios.find(u => u.usuario === sessaoSalva);
-        if (u && (u.nivel === 'admin' || new Date(u.fim) >= new Date())) {
+        if (u && u.usuario !== ADMIN_USER && (u.nivel === 'admin' || new Date(u.fim) >= new Date())) {
           esconderLoading();
           aplicarLogin(u);
           return;
