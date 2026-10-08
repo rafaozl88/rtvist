@@ -702,7 +702,7 @@
 
   /* IMPORT VIEW */
   .import-card {
-    max-width: 700px;
+    max-width: 1200px;
     margin: 0 auto;
   }
   .import-steps {
@@ -867,12 +867,6 @@
   .auto-field { display:flex; gap:6px; }
   .auto-field input { flex:1; }
 
-  /* Import preview responsivo */
-  @media (max-width: 900px) {
-    #import-preview > div > div:first-child { order: 1; }
-    #import-preview > div { grid-template-columns: 1fr !important; }
-  }
-
   /* Preview thumb maior - objeto completo visível */
   .preview-thumb {
     aspect-ratio: 4/3 !important;
@@ -964,7 +958,13 @@
 
   .vehicle-photo-preview { display:block; width:100%; height:420px; object-fit:contain; background:#0a0a0a; cursor:zoom-in; }
   #import-thumb-grid { grid-template-columns:1fr !important; gap:16px; }
-  #import-preview > div { grid-template-columns:1fr !important; }
+  .import-layout { display:grid; grid-template-columns:minmax(0,1fr) minmax(260px,340px); gap:20px; align-items:start; }
+  .import-layout > div { min-width:0; }
+  .import-fields { position:sticky; top:90px; }
+  @media(max-width:700px) {
+    .import-layout { grid-template-columns:1fr; }
+    .import-fields { position:static; }
+  }
   #edit-fotos-grid img, #modal-photo-grid img { background:#0a0a0a; object-fit:contain; }
   .lightbox { z-index:4000; }
   @media(max-width:600px) { .vehicle-photo-preview { height:320px; } }
@@ -1121,7 +1121,7 @@ Sair
       <div id="import-preview" style="display:none; margin-top:1.5rem; border-top:1px solid var(--border); padding-top:1.5rem;">
         <div class="card-title" style="margin-bottom:1rem;">Prévia — <span id="import-preview-title"></span></div>
 
-        <div style="display:grid;grid-template-columns:1fr 340px;gap:20px;align-items:start;">
+        <div class="import-layout">
 
           <!-- FOTOS GRANDES À ESQUERDA -->
           <div>
@@ -1131,7 +1131,7 @@ Sair
           </div>
 
           <!-- FORMULÁRIO À DIREITA -->
-          <div>
+          <div class="import-fields">
             <div class="form-group">
               <label class="form-label">Nome do Veículo</label>
               <input class="form-input" id="import-nome" type="text">
