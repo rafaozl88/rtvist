@@ -961,6 +961,13 @@
   .adult-foto-item img { width:100%; height:100%; object-fit:cover; pointer-events:none; }
   .adult-foto-badge { position:absolute; top:6px; left:6px; background:rgba(0,0,0,.75); border:1px solid #991b1b; color:#fca5a5; font-size:9px; font-weight:700; padding:2px 6px; border-radius:4px; text-transform:uppercase; }
   .adult-foto-wrap { position:relative; width:100%; height:100%; }
+
+  .vehicle-photo-preview { display:block; width:100%; height:420px; object-fit:contain; background:#0a0a0a; cursor:zoom-in; }
+  #import-thumb-grid { grid-template-columns:1fr !important; gap:16px; }
+  #import-preview > div { grid-template-columns:1fr !important; }
+  #edit-fotos-grid img, #modal-photo-grid img { background:#0a0a0a; object-fit:contain; }
+  .lightbox { z-index:4000; }
+  @media(max-width:600px) { .vehicle-photo-preview { height:320px; } }
 </style>
 </head>
 <body>
@@ -1620,7 +1627,8 @@ const auth     = firebase.auth();
 
 async function fbCarregarVeiculos() {
   const snap = await fsdb.collection('veiculos').get();
-  db = snap.docs.map(d => ({ _id: d.id, ...d.data() }));
+  db = snap.docs.map(d => ({ ...d.data(), _id: d.id }));
+  atualizarStats();
 }
 
 // ─── COMPRESSÃO DE IMAGEM ────────────────────────────────────────────────────
@@ -1656,11 +1664,13 @@ async function fbSalvarVeiculo(veiculo) {
     const storageRef = storage.ref(`fotos/${id}/${nomeArq}`);
     await storageRef.putString(comprimida, 'data_url');
     const url = await storageRef.getDownloadURL();
-    return { nome: f.nome, tipos: f.tipos || (f.tipo ? [f.tipo] : ['geral']), url };
+    return { nome: f.nome || 'foto.jpg', tipos: f.tipos || (f.tipo ? [f.tipo] : ['geral']), _rot: f._rot || 0, url };
   }));
 
   const veiculoParaSalvar = {
     nome:  veiculo.nome,
+    motor: veiculo.motor || '',
+    chassi: veiculo.chassi || '',
     marca: veiculo.marca || '',
     ano:   veiculo.ano   || '',
     obs:   veiculo.obs   || '',
@@ -1825,6 +1835,7 @@ window.mudarPagina = mudarPagina;
 
 // ─── RENDER RESULTS ───────────────────────────────────────────────────────────
 function renderResults() {
+  atualizarStats();
   const c = document.getElementById('results-container');
   const q = document.getElementById('search-input').value.trim().toLowerCase();
   if (q) paginaAtual = 1;
@@ -1852,7 +1863,7 @@ function renderResults() {
   if (results.length === 0) {
     c.innerHTML = `<div class="empty-state">
       <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
-      <h3>Nenhum resultado</h3><p>Tente outro nome ou remova os filtros.</p></div>`;
+      <div class="results-header"><span class="results-title"><strong>0</strong> veículos encontrados</span></div><div class="results-header"><span class="results-title"><strong>0</strong> veículos encontrados</span></div><h3>Nenhum resultado</h3><p>Tente outro nome ou remova os filtros.</p></div>`;
     return;
   }
 
@@ -1954,8 +1965,8 @@ function renderModal() {
     const tiposF = getTipos(f);
     const badgesF = tiposF.map(t=>`<span class="type-badge badge-${t}">${t}</span>`).join(' ');
     const src = f.url || f.data || '';
-    photosHtml += `<div class="photo-item lb-trigger" data-src="${src}" data-nome="${(f.nome||'').replace(/"/g,'&quot;')}" data-tipo="${tiposF.join(', ')}">
-      <img src="${src}" alt="${f.nome||''}">
+    photosHtml += `<div class="photo-item lb-trigger" data-src="${src}" data-rot="${f._rot || 0}" data-nome="${(f.nome||'').replace(/"/g,'&quot;')}" data-tipo="${tiposF.join(', ')}">
+      <img src="${src}" alt="${f.nome||''}" onload="ajustarPreviaFoto(this,${f._rot || 0})">
       <div class="photo-item-info">
         <span class="photo-item-name">${f.nome||'foto'}</span>
         <span style="display:flex;gap:3px;flex-wrap:wrap">${badgesF}</span>
@@ -1967,7 +1978,7 @@ function renderModal() {
   // Event delegation — evita problemas com base64 em onclick inline
   grid.querySelectorAll('.lb-trigger').forEach(el => {
     el.addEventListener('click', function() {
-      abrirLightbox(this.dataset.src, this.dataset.nome, this.dataset.tipo);
+      abrirLightbox(this.dataset.src, this.dataset.nome, this.dataset.tipo, Number(this.dataset.rot || 0));
     });
   });
 }
@@ -1981,9 +1992,37 @@ function fecharModal(e) {
 }
 window.fecharModal = fecharModal;
 
+function ajustarPreviaFoto(img,rot=0) {
+  const girado=Math.abs(rot % 180)===90;
+  const largura=img.clientWidth, altura=img.clientHeight;
+  const escala=girado ? Math.min(largura/altura,altura/largura) : 1;
+  img.style.transform=`rotate(${rot}deg) scale(${escala})`;
+}
+window.ajustarPreviaFoto=ajustarPreviaFoto;
+function renderImportFotos() {
+  const grid=document.getElementById('import-thumb-grid');
+  grid.innerHTML='';
+  arquivosImport.forEach((foto,i)=>{
+    const card=document.createElement('div');
+    const img=document.createElement('img');
+    img.className='vehicle-photo-preview'; img.src=foto.data;
+    img.onload=()=>ajustarPreviaFoto(img,foto._rot || 0);
+    img.onclick=()=>abrirLightbox(img.src,foto.nome,'',foto._rot || 0);
+    card.appendChild(img);
+    [-1,1].forEach(dir=>{
+      const btn=document.createElement('button'); btn.className='btn';
+      btn.textContent=dir<0?'↺ Girar':'↻ Girar';
+      btn.onclick=()=>{foto._rot=((foto._rot || 0)+dir*90+360)%360; ajustarPreviaFoto(img,foto._rot);};
+      card.appendChild(btn);
+    });
+    grid.appendChild(card);
+  });
+}
 // ─── EDIÇÃO DE VEÍCULO ────────────────────────────────────────────────────────
+let veiculoEmEdicao = null;
 function abrirEdicao() {
-  const v = db[veiculoAberto];
+  veiculoEmEdicao = {...db[veiculoAberto], fotos:db[veiculoAberto].fotos.map(f=>({...f}))};
+  const v = veiculoEmEdicao;
   const overlay = document.createElement('div');
   overlay.id = 'edit-overlay';
   overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.9);z-index:3000;overflow-y:auto;padding:1rem;display:flex;align-items:flex-start;justify-content:center;';
@@ -1994,7 +2033,7 @@ function abrirEdicao() {
     const src = f.url || f.data || '';
     const rot = f._rot || 0;
     return `<div style="position:relative;border-radius:6px;overflow:hidden;background:var(--surface2);border:1px solid var(--border);">
-      <img src="${src}" style="width:100%;height:120px;object-fit:cover;transform:rotate(${rot}deg);transition:transform 0.2s;" id="edit-foto-img-${fi}">
+      <img src="${src}" class="vehicle-photo-preview" style="transform:rotate(${rot}deg);" onload="ajustarPreviaFoto(this,${rot})" onclick="abrirLightbox(this.src,'Foto','',${rot})" id="edit-foto-img-${fi}">
       <div style="padding:6px;display:flex;gap:4px;justify-content:center;flex-wrap:wrap;">
         <button onclick="editFotoGirar(${fi},-1)" style="padding:4px 8px;background:var(--surface);border:1px solid var(--border2);color:var(--text);border-radius:4px;cursor:pointer;font-size:11px;">↺</button>
         <button onclick="editFotoGirar(${fi},1)" style="padding:4px 8px;background:var(--surface);border:1px solid var(--border2);color:var(--text);border-radius:4px;cursor:pointer;font-size:11px;">↻</button>
@@ -2004,7 +2043,7 @@ function abrirEdicao() {
   }).join('');
 
   overlay.innerHTML = `
-    <div style="background:var(--surface);border:1px solid var(--border2);border-radius:var(--radius2);width:100%;max-width:680px;overflow:hidden;">
+    <div style="background:var(--surface);border:1px solid var(--border2);border-radius:var(--radius2);width:100%;max-width:1100px;overflow:hidden;">
       <div style="padding:1.25rem 1.5rem;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;">
         <div style="font-size:16px;font-weight:700;">✏ Editar Veículo</div>
         <button onclick="document.getElementById('edit-overlay').remove()" style="background:none;border:1px solid var(--border2);border-radius:var(--radius);color:var(--text2);cursor:pointer;padding:6px 12px;font-size:12px;font-family:'Syne',sans-serif;">✕ Fechar</button>
@@ -2026,7 +2065,7 @@ function abrirEdicao() {
         </div>
         <div>
           <div style="font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--text2);margin-bottom:8px;">Fotos (girar ou excluir individualmente)</div>
-          <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:8px;" id="edit-fotos-grid">
+          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,420px),1fr));gap:16px;" id="edit-fotos-grid">
             ${fotosHtml}
           </div>
         </div>
@@ -2040,17 +2079,20 @@ function abrirEdicao() {
 window.abrirEdicao = abrirEdicao;
 
 function editFotoGirar(fi, dir) {
-  const v = db[veiculoAberto];
+  const v = veiculoEmEdicao;
   if (!v.fotos[fi]._rot) v.fotos[fi]._rot = 0;
   v.fotos[fi]._rot = (v.fotos[fi]._rot + dir * 90 + 360) % 360;
   const img = document.getElementById(`edit-foto-img-${fi}`);
-  if (img) img.style.transform = `rotate(${v.fotos[fi]._rot}deg)`;
+  if (img) {
+    ajustarPreviaFoto(img, v.fotos[fi]._rot);
+    img.onclick=()=>abrirLightbox(img.src, v.fotos[fi].nome, '', v.fotos[fi]._rot);
+  }
 }
 window.editFotoGirar = editFotoGirar;
 
 function editFotoExcluir(fi) {
   if (!confirm('Excluir esta foto?')) return;
-  const v = db[veiculoAberto];
+  const v = veiculoEmEdicao;
   v.fotos.splice(fi, 1);
   // Re-renderizar grid de fotos
   const getTipos = f => f.tipos || (f.tipo?[f.tipo]:['geral']);
@@ -2060,7 +2102,7 @@ function editFotoExcluir(fi) {
     const src = f.url || f.data || '';
     const rot = f._rot || 0;
     return `<div style="position:relative;border-radius:6px;overflow:hidden;background:var(--surface2);border:1px solid var(--border);">
-      <img src="${src}" style="width:100%;height:120px;object-fit:cover;transform:rotate(${rot}deg);transition:transform 0.2s;" id="edit-foto-img-${fi2}">
+      <img src="${src}" class="vehicle-photo-preview" style="transform:rotate(${rot}deg);" onload="ajustarPreviaFoto(this,${rot})" onclick="abrirLightbox(this.src,'Foto','',${rot})" id="edit-foto-img-${fi2}">
       <div style="padding:6px;display:flex;gap:4px;justify-content:center;flex-wrap:wrap;">
         <button onclick="editFotoGirar(${fi2},-1)" style="padding:4px 8px;background:var(--surface);border:1px solid var(--border2);color:var(--text);border-radius:4px;cursor:pointer;font-size:11px;">↺</button>
         <button onclick="editFotoGirar(${fi2},1)" style="padding:4px 8px;background:var(--surface);border:1px solid var(--border2);color:var(--text);border-radius:4px;cursor:pointer;font-size:11px;">↻</button>
@@ -2072,7 +2114,7 @@ function editFotoExcluir(fi) {
 window.editFotoExcluir = editFotoExcluir;
 
 async function salvarEdicao() {
-  const v = db[veiculoAberto];
+  const v = veiculoEmEdicao;
   v.nome   = document.getElementById('edit-nome').value.trim()   || v.nome;
   v.marca  = document.getElementById('edit-marca').value.trim();
   v.ano    = document.getElementById('edit-ano').value.trim();
@@ -2085,6 +2127,7 @@ async function salvarEdicao() {
 
   try {
     await fbSalvarVeiculo(v);
+    db[veiculoAberto] = v;
     atualizarStats(); renderCadastrosList(); renderResults();
     // Atualizar modal aberto
     abrirVeiculo(veiculoAberto);
@@ -2117,8 +2160,8 @@ function lbAplicar() {
 function lbZoom(dir) { lbScale=Math.min(5,Math.max(0.2,lbScale+dir*0.25)); lbAplicar(); }
 function lbGirar(dir) { lbRot+=dir*90; lbAplicar(); }
 function lbReset() { lbScale=1; lbRot=0; lbAplicar(); }
-function abrirLightbox(src,nome,tipo) {
-  lbScale=1; lbRot=0;
+function abrirLightbox(src,nome,tipo,rot=0) {
+  lbScale=1; lbRot=rot;
   const img = document.getElementById('lightbox-img');
   img.src=src;
   img.style.transform='';
@@ -2127,6 +2170,7 @@ function abrirLightbox(src,nome,tipo) {
   document.getElementById('lb-zoom-val').textContent='100%';
   document.getElementById('lightbox-info').textContent=[nome,tipo].filter(Boolean).join(' · ');
   document.getElementById('lightbox').classList.add('open');
+  lbAplicar();
 }
 function fecharLightbox() { document.getElementById('lightbox').classList.remove('open'); }
 document.getElementById('lightbox').addEventListener('click',function(e){
@@ -2398,7 +2442,7 @@ function mostrarFilaItem(idx){
     reader.onload=async e=>{
       const comprimida = await comprimirImagem(e.target.result);
       arquivosImport.push({data:comprimida, nome:file.name});
-      if(grid.children.length<6){const div=document.createElement('div');div.className='preview-thumb';div.innerHTML=`<img src="${comprimida}" alt="">`;grid.appendChild(div);}
+      renderImportFotos();
       loaded++;
       document.getElementById('import-count').textContent=`${loaded}/${files.length} imagem(ns) comprimida(s)`;
       if(loaded===files.length){
@@ -2435,10 +2479,9 @@ async function confirmarImport(){
   try {
     const existente=db.find(v=>v.nome.toLowerCase()===nome.toLowerCase());
     if(existente){
-      existente.fotos.push(...fotosNovas);
-      if(motor) existente.motor=motor;
-      if(chassi) existente.chassi=chassi;
-      await fbSalvarVeiculo(existente);
+      const atualizado={...existente,marca:marca || existente.marca,ano:ano || existente.ano,motor:motor || existente.motor,chassi:chassi || existente.chassi,fotos:[...existente.fotos,...fotosNovas]};
+      await fbSalvarVeiculo(atualizado);
+      Object.assign(existente,atualizado);
     } else {
       const novo={nome,marca,ano,obs:'',motor,chassi,fotos:fotosNovas};
       const id=await fbSalvarVeiculo(novo);
@@ -2449,6 +2492,8 @@ async function confirmarImport(){
     renderCadastrosList();
   } catch(err){
     showToast('Erro ao salvar no Firebase.','error'); console.error(err);
+    btnImport.disabled=false; btnImport.textContent='✔ Salvar este Veículo';
+    return;
   }
 
   arquivosImport=[]; filaIdx++; tiposImportSelecionados=['motor','chassi'];
