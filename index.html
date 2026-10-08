@@ -1564,7 +1564,7 @@ Ao preencher seus dados e confirmar abaixo, o USUÁRIO declara ter lido e compre
         <div style="font-size:12px;color:var(--text2);margin-top:3px;" id="modal-meta"></div>
       </div>
       <button class="modal-close" onclick="fecharModal()">✕ Fechar</button>
-      <button class="btn" id="btn-editar-veiculo" onclick="abrirEdicao()" style="background:var(--surface2);border:1px solid var(--border2);color:var(--text);font-size:12px;padding:6px 12px;border-radius:var(--radius);cursor:pointer;font-family:'Syne',sans-serif;font-weight:600;">✏ Editar</button>
+      <button class="btn" id="btn-editar-veiculo" onclick="abrirEdicao()" style="display:none;background:var(--surface2);border:1px solid var(--border2);color:var(--text);font-size:12px;padding:6px 12px;border-radius:var(--radius);cursor:pointer;font-family:'Syne',sans-serif;font-weight:600;">✏ Editar</button>
     </div>
     <div class="modal-body">
       <div class="modal-filters" id="modal-filters"></div>
@@ -1653,6 +1653,7 @@ function comprimirImagem(base64, maxLado = 1280, qualidade = 0.82) {
 }
 
 async function fbSalvarVeiculo(veiculo) {
+  if (!podeEditarVeiculos()) throw new Error('Somente o Master pode alterar veículos.');
   const id = veiculo._id || Date.now().toString();
   veiculo._id = id;
   const fotasNovas   = veiculo.fotos.filter(f => f.data && f.data.startsWith('data:'));
@@ -1683,6 +1684,7 @@ async function fbSalvarVeiculo(veiculo) {
 }
 
 async function fbExcluirVeiculo(id) {
+  if (!podeEditarVeiculos()) throw new Error('Somente o Master pode excluir veículos.');
   // Remover fotos do Storage
   try {
     const pasta = storage.ref(`fotos/${id}`);
@@ -1761,6 +1763,19 @@ let modoVisu        = localStorage.getItem('rt_visu') || 'grid';
 const POR_PAGINA  = 12;
 const ADMIN_USER  = 'rtmaster';
 const ADMIN_PASS  = 'rtmastervist2026';
+
+function podeEditarVeiculos() {
+  return usuarioAtual?.usuario === ADMIN_USER && usuarioAtual?.nivel === 'admin';
+}
+function exigirMasterVeiculos() {
+  if (podeEditarVeiculos()) return true;
+  showToast('Somente o Master pode alterar os cadastros de veículos.', 'error');
+  return false;
+}
+function atualizarPermissaoEdicao() {
+  document.getElementById('btn-editar-veiculo').style.display = podeEditarVeiculos() ? '' : 'none';
+  if (!podeEditarVeiculos()) document.getElementById('edit-overlay')?.remove();
+}
 
 // ─── SAVE / LOAD ──────────────────────────────────────────────────────────────
 async function saveDB() {
@@ -1930,6 +1945,7 @@ function abrirVeiculoById(id) {
 window.abrirVeiculoById = abrirVeiculoById;
 
 function abrirVeiculo(idx) {
+  atualizarPermissaoEdicao();
   veiculoAberto = idx;
   filtroModal = 'todos';
   const v = db[idx];
@@ -2021,6 +2037,7 @@ function renderImportFotos() {
 // ─── EDIÇÃO DE VEÍCULO ────────────────────────────────────────────────────────
 let veiculoEmEdicao = null;
 function abrirEdicao() {
+  if (!exigirMasterVeiculos()) return;
   veiculoEmEdicao = {...db[veiculoAberto], fotos:db[veiculoAberto].fotos.map(f=>({...f}))};
   const v = veiculoEmEdicao;
   const overlay = document.createElement('div');
@@ -2079,6 +2096,7 @@ function abrirEdicao() {
 window.abrirEdicao = abrirEdicao;
 
 function editFotoGirar(fi, dir) {
+  if (!exigirMasterVeiculos()) return;
   const v = veiculoEmEdicao;
   if (!v.fotos[fi]._rot) v.fotos[fi]._rot = 0;
   v.fotos[fi]._rot = (v.fotos[fi]._rot + dir * 90 + 360) % 360;
@@ -2091,6 +2109,7 @@ function editFotoGirar(fi, dir) {
 window.editFotoGirar = editFotoGirar;
 
 function editFotoExcluir(fi) {
+  if (!exigirMasterVeiculos()) return;
   if (!confirm('Excluir esta foto?')) return;
   const v = veiculoEmEdicao;
   v.fotos.splice(fi, 1);
@@ -2114,6 +2133,7 @@ function editFotoExcluir(fi) {
 window.editFotoExcluir = editFotoExcluir;
 
 async function salvarEdicao() {
+  if (!exigirMasterVeiculos()) return;
   const v = veiculoEmEdicao;
   v.nome   = document.getElementById('edit-nome').value.trim()   || v.nome;
   v.marca  = document.getElementById('edit-marca').value.trim();
@@ -2285,6 +2305,7 @@ function handleFiles(files) {
 window.handleFiles = handleFiles;
 
 async function salvarCadastro() {
+  if (!exigirMasterVeiculos()) return;
   const nome=document.getElementById('cad-nome').value.trim();
   if(!nome){showToast('Informe o nome do veículo.','error');return;}
   if(!arquivosSelecionados.length){showToast('Selecione ao menos uma foto.','error');return;}
@@ -2355,6 +2376,7 @@ function renderCadastrosList() {
 window.renderCadastrosList = renderCadastrosList;
 
 async function excluir(i) {
+  if (!exigirMasterVeiculos()) return;
   if(!confirm(`Excluir "${db[i].nome}" do banco?`)) return;
   const id=db[i]._id;
   try {
@@ -2463,6 +2485,7 @@ function mostrarFilaItem(idx){
 }
 
 async function confirmarImport(){
+  if (!exigirMasterVeiculos()) return;
   const nome=document.getElementById('import-nome').value.trim();
   if(!nome){showToast('Informe o nome do veículo.','error');return;}
   if(!arquivosImport.length){showToast('Nenhuma foto para importar.','error');return;}
@@ -2587,6 +2610,7 @@ window.fazerLogin = fazerLogin;
 
 function aplicarLogin(encontrado){
   usuarioAtual=encontrado;
+  atualizarPermissaoEdicao();
   document.getElementById('login-screen').style.display='none';
   document.getElementById('btn-logout').style.display='inline-flex';
   if(encontrado.nivel!=='admin'){
@@ -2612,6 +2636,7 @@ function aplicarLogin(encontrado){
 async function logoutSistema(){
   if(usuarioAtual) liberarDispositivo(usuarioAtual.usuario);
   usuarioAtual=null;
+  atualizarPermissaoEdicao();
   localStorage.removeItem('rtvist_session');
   try { await auth.signOut(); } catch(e) {}
   document.getElementById('login-screen').style.display='flex';
